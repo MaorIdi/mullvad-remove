@@ -164,7 +164,10 @@ def main() -> int:
                             die(f"Delete failed for {name} ({resp.status_code}): {resp.text[:300]}")
 
         except requests.RequestException as e:
-            die(f"Network/API error: {e}")
+            print(f"Network/API error: {e}", file=sys.stderr)
+            # If we are not running in a loop, this is fatal.
+            if args.interval <= 0:
+                return 1
 
         if args.interval <= 0:
             break
