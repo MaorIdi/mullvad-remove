@@ -1,0 +1,9 @@
+services:
+  mullvad-cleaner:
+    build: .
+    restart: unless-stopped
+    environment:
+      - MULLVAD_ACCOUNT_NUMBER=${MULLVAD_ACCOUNT_NUMBER}
+    volumes:
+      # Mount allowed_devices.txt so you can update it without rebuilding
+      - ./allowed_devices.txt:/app/allowed_devices.txt
