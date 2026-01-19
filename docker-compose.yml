@@ -1,6 +1,8 @@
 services:
   mullvad-cleaner:
-    build: .
+    build:
+      context: .
+      network: host
     restart: unless-stopped
     environment:
       - MULLVAD_ACCOUNT_NUMBER=${MULLVAD_ACCOUNT_NUMBER}
