@@ -28,11 +28,7 @@ pipeline {
 
         stage('Python Lint & Test') {
             agent {
-                docker {
-                    image "python:${PYTHON_VERSION}-slim"
-                    args '-u root:root'
-                }
-            }
+                any
             steps {
                 sh '''
                     pip install --no-cache-dir -r requirements.txt
