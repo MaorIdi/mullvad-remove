@@ -27,8 +27,7 @@ pipeline {
         }
 
         stage('Python Lint & Test') {
-            agent {
-                any
+            agent any
             steps {
                 sh '''
                     pip install --no-cache-dir -r requirements.txt
@@ -46,7 +45,7 @@ pipeline {
                     echo "Python syntax check passed ✓"
                 '''
             }
-        }
+        
 
         stage('Security Scan') {
             steps {
