@@ -2,10 +2,14 @@ services:
   mullvad-cleaner:
     build:
       context: .
-      network: host
     restart: unless-stopped
     environment:
       - MULLVAD_ACCOUNT_NUMBER=${MULLVAD_ACCOUNT_NUMBER}
     volumes:
       # Mount allowed_devices.txt so you can update it without rebuilding
-      - ./allowed_devices.txt:/app/allowed_devices.txt
+      - ./allowed_devices.txt:/app/allowed_devices.txt:ro
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
