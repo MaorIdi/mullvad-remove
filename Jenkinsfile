@@ -1,24 +1,43 @@
 pipeline {
-    agent any
+    agent {
+        docker {
+            image 'docker:latest'
+            // We mount the docker socket so this container can control the host's Docker
+            // We run as root to avoid permission issues with the socket
+            args '-v /var/run/docker.sock:/var/run/docker.sock --user root'
+        }
+    }
+
+    environment {
+        // Optional: Tells your scripts/compose that this is an automated build
+        CI = 'true'
+    }
 
     stages {
-        stage('Restart Application') {
+        stage('Deploy') {
             steps {
                 script {
-                    echo 'Stopping existing container...'
-                    sh 'docker compose down || true'
+                    echo '--- 1. Teardown ---'
+                    // "|| true" ensures the pipeline doesn't stop if containers are already down
+                    sh 'docker compose down --remove-orphans || true'
                     
-                    echo 'Starting container with latest code...'
+                    echo '--- 2. Build & Launch ---'
+                    // -d: Detached mode
+                    // --build: Forces a rebuild to include your latest code changes
                     sh 'docker compose up -d --build'
                     
-                    // Wait and verify container is running
+                    echo '--- 3. Health Check ---'
+                    // Wait 5 seconds for the container to stabilize
+                    sh 'sleep 5'
+                    
+                    // Verify the specific container is actually running
+                    // We verify that the "State" is running to be sure
                     sh '''
-                        sleep 3
-                        if docker compose ps | grep -q "Up"; then
-                            echo "✓ Application restarted successfully"
+                        if docker compose ps --format json | grep -q "running"; then
+                            echo "✓ SUCCESS: Container is up and running."
                             docker compose logs --tail=20
                         else
-                            echo "✗ Application failed to start"
+                            echo "✗ FAILURE: Container died or failed to start."
                             docker compose logs
                             exit 1
                         fi
@@ -29,12 +48,12 @@ pipeline {
     }
     
     post {
-        success {
-            echo '✓ Deployment successful!'
-        }
         failure {
-            echo '✗ Deployment failed!'
-            sh 'docker compose logs || true'
+            echo 'Deployment failed. Check the logs above.'
+        }
+        cleanup {
+            // Optional: Clean up temporary docker images to save space
+            sh 'docker image prune -f || true'
         }
     }
 }
