@@ -27,23 +27,26 @@ pipeline {
         }
 
         stage('Python Lint & Test') {
-            agent any
             steps {
-                sh '''
-                    pip install --no-cache-dir -r requirements.txt
-                    pip install --no-cache-dir pylint flake8
-                    
-                    # Lint the Python script
-                    echo "Running pylint..."
-                    pylint mullvad_device_cleaner.py --exit-zero --reports=y || true
-                    
-                    echo "Running flake8..."
-                    flake8 mullvad_device_cleaner.py --max-line-length=120 --exit-zero || true
-                    
-                    # Syntax check
-                    python -m py_compile mullvad_device_cleaner.py
-                    echo "Python syntax check passed ✓"
-                '''
+                script {
+                    sh '''
+                        docker run --rm -v "$(pwd):/app" -w /app python:3.11-slim sh -c "
+                            pip install --no-cache-dir -r requirements.txt
+                            pip install --no-cache-dir pylint flake8
+                            
+                            # Lint the Python script
+                            echo 'Running pylint...'
+                            pylint mullvad_device_cleaner.py --exit-zero --reports=y || true
+                            
+                            echo 'Running flake8...'
+                            flake8 mullvad_device_cleaner.py --max-line-length=120 --exit-zero || true
+                            
+                            # Syntax check
+                            python -m py_compile mullvad_device_cleaner.py
+                            echo 'Python syntax check passed ✓'
+                        "
+                    '''
+                }
             }
         }
 
