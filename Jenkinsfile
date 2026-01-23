@@ -45,7 +45,7 @@ pipeline {
                     echo "Python syntax check passed ✓"
                 '''
             }
-        
+        }
 
         stage('Security Scan') {
             steps {
