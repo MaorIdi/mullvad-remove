@@ -1,45 +1,35 @@
 pipeline {
-    agent {
-        docker {
-            image 'docker:27-cli'
-            args '-v /var/run/docker.sock:/var/run/docker.sock --user server'
-        }
+    agent any
+    environment {
+        // Updated naming convention
+        IMAGE = 'maoridi/mullvad-remove'
+        // You will create this ID in Jenkins UI later
+        REGISTRY_CREDS = 'docker-hub-creds'
     }
-
     stages {
-        stage('Restart Application') {
+        stage('Build & Push') {
             steps {
                 script {
-                    echo 'Stopping existing container...'
-                    sh 'docker compose down || true'
-                    
-                    echo 'Starting container with latest code...'
-                    sh 'docker compose up -d --build'
-                    
-                    // Wait and verify container is running
-                    sh '''
-                        sleep 3
-                        if docker compose ps | grep -q "Up"; then
-                            echo "✓ Application restarted successfully"
-                            docker compose logs --tail=20
-                        else
-                            echo "✗ Application failed to start"
-                            docker compose logs
-                            exit 1
-                        fi
-                    '''
+                    docker.withRegistry('', REGISTRY_CREDS) {
+                        // Builds using the Dockerfile in root
+                        def app = docker.build("${IMAGE}:${env.BUILD_NUMBER}")
+                        app.push()
+                        app.push('latest')
+                    }
                 }
             }
         }
-    }
-    
-    post {
-        success {
-            echo '✓ Deployment successful!'
-        }
-        failure {
-            echo '✗ Deployment failed!'
-            sh 'docker compose logs || true'
+        stage('Deploy') {
+            steps {
+                // Deploys the chart from the charts/worker folder
+                // We disable serviceAccount creation to keep it simple
+                sh """
+                  helm upgrade --install mullvad-remove ./charts/worker \
+                  --set image.repository=${IMAGE} \
+                  --set image.tag=${env.BUILD_NUMBER} \
+                  --set serviceAccount.create=false
+                """
+            }
         }
     }
 }
