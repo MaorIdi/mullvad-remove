@@ -1,0 +1,115 @@
+# Default values for mullvad-remove worker.
+# This is a YAML-formatted file.
+# Declare name/value pairs to be passed into your templates.
+
+# Application image configuration
+image:
+  repository: maoridi/mullvad-remove
+  pullPolicy: IfNotPresent
+  tag: "latest"
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+# Service account configuration
+serviceAccount:
+  # Specifies whether a service account should be created
+  create: false
+  # Annotations to add to the service account
+  annotations: {}
+  # The name of the service account to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name: ""
+
+# Pod annotations
+podAnnotations: {}
+
+# Pod security context
+podSecurityContext:
+  fsGroup: 1000
+
+# Security context for the container
+securityContext:
+  capabilities:
+    drop:
+    - ALL
+  readOnlyRootFilesystem: true
+  runAsNonRoot: true
+  runAsUser: 1000
+
+# Resource limits and requests
+resources:
+  limits:
+    cpu: 100m
+    memory: 128Mi
+  requests:
+    cpu: 50m
+    memory: 64Mi
+
+# Node selector
+nodeSelector: {}
+
+# Tolerations
+tolerations: []
+
+# Affinity
+affinity: {}
+
+# CronJob configuration
+cronjob:
+  # Enable CronJob (set to false to disable scheduled execution)
+  enabled: true
+  # Schedule in cron format (default: every 5 minutes)
+  schedule: "*/5 * * * *"
+  # Number of successful finished jobs to retain
+  successfulJobsHistoryLimit: 3
+  # Number of failed finished jobs to retain
+  failedJobsHistoryLimit: 1
+  # Restart policy for the pod
+  restartPolicy: OnFailure
+  # Concurrency policy: Allow, Forbid, or Replace
+  concurrencyPolicy: Forbid
+
+# Environment variables
+env:
+  # Mullvad account number - REQUIRED
+  # Set this via Kubernetes secret or directly here (not recommended for production)
+  - name: MULLVAD_ACCOUNT_NUMBER
+    valueFrom:
+      secretKeyRef:
+        name: mullvad-credentials
+        key: account-number
+        optional: false
+
+# Additional environment variables from ConfigMaps or Secrets
+envFrom: []
+
+# Command to run (default uses the script's built-in behavior)
+command: []
+args:
+  - "--apply"
+  - "--interval"
+  - "0"  # Run once per CronJob execution
+
+# ConfigMap for allowed_devices.txt
+allowedDevices:
+  # List of allowed device names (one per line)
+  devices: |-
+    # Add your allowed devices here, one per line
+    # Example:
+    # happy-lion
+    # calm-otter
+
+# Volume mounts
+volumeMounts:
+  - name: allowed-devices
+    mountPath: /app/allowed_devices.txt
+    subPath: allowed_devices.txt
+    readOnly: true
+
+# Volumes
+volumes:
+  - name: allowed-devices
+    configMap:
+      name: '{{ include "mullvad-remove.fullname" . }}-allowed-devices'
