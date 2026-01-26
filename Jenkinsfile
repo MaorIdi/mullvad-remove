@@ -5,6 +5,8 @@ pipeline {
         IMAGE = 'maoridi/mullvad-remove'
         // You will create this ID in Jenkins UI later
         REGISTRY_CREDS = 'docker-hub-creds'
+        // Mullvad account number from Jenkins credentials
+        MULLVAD_ACCOUNT_NUMBER = credentials('mullvad-account-number')
     }
     stages {
         stage('Build & Push') {
