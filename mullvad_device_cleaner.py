@@ -8,7 +8,7 @@ Requirements:
   pip install requests
 
 Usage:
-  export MULLVAD_ACCOUNT_NUMBER="6989742591567920"
+  export MULLVAD_ACCOUNT_NUMBER="your_account_number_here"
   printf "happy-lion\ncalm-otter\n" > allowed_devices.txt
 
   # Dry run (recommended first):
